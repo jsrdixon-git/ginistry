@@ -78,7 +78,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "The Ginistry Gin Explorer" },
-      { name: "description", content: "Explore 102 gins at The Ginistry in Oxted, Surrey." },
+      { name: "description", content: "Explore over 100 gins at The Ginistry in Oxted, Surrey." },
       { name: "author", content: "The Ginistry" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
