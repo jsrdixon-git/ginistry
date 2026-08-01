@@ -112,10 +112,11 @@ export default function GinExplorer() {
 
   function toggleTried(id: number) {
     if (!ensurePassport()) return;
-    const has = passport.tried.includes(id);
+    const current = passport!;
+    const has = current.tried.includes(id);
     const next: Passport = {
-      ...passport,
-      tried: has ? passport.tried.filter((x) => x !== id) : [...passport.tried, id],
+      ...current,
+      tried: has ? current.tried.filter((x) => x !== id) : [...current.tried, id],
     };
     savePassport(next);
     setPassport(next);
@@ -124,6 +125,7 @@ export default function GinExplorer() {
       if (m) setCelebration(m);
     }
   }
+
 
   function createPassport() {
     const name = nameInput.trim();
