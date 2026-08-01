@@ -15,6 +15,8 @@ const BODY = "'Cormorant Garamond', serif";
 type Passport = {
   profile: { name: string; id: string; email: string; created: string };
   tried: number[];
+  ratings: Record<number, number>;
+
 };
 
 
