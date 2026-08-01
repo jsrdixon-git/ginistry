@@ -684,7 +684,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
             />
             <div style={{ fontFamily: HEAD, fontSize: 24, color: C.gold }}>{selected.name}</div>
             <div style={{ fontFamily: HEAD, fontSize: 13, opacity: 0.7, marginTop: 4 }}>
-              {selected.style} · {selected.origin} · {selected.abv}%
+              {selected.style} · {selected.origin} · {selected.abv}% ABV
             </div>
             <p style={{ fontSize: 19, lineHeight: 1.5, marginTop: 16 }}>{selected.description}</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 16 }}>
