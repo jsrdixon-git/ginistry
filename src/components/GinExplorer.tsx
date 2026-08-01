@@ -81,6 +81,10 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
   const [copied, setCopied] = useState(false);
   const [celebration, setCelebration] = useState<(typeof MILESTONES)[number] | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  const sheetRef = useRef<HTMLDivElement | null>(null);
+  const [sheetDragY, setSheetDragY] = useState(0);
+  const sheetStartY = useRef(0);
+  const isDragging = useRef(false);
 
   useEffect(() => {
     try {
