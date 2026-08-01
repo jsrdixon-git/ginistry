@@ -180,6 +180,93 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
     URL.revokeObjectURL(url);
   }
 
+  const createModal = createOpen && (
+        <div
+          onClick={() => setCreateOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.75)",
+            zIndex: 60,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: C.card,
+              border: `1px solid ${C.gold}`,
+              borderRadius: 16,
+              padding: "28px 24px",
+              maxWidth: 360,
+              width: "100%",
+            }}
+          >
+            <div style={{ fontSize: 44, textAlign: "center" }}>🥃</div>
+            <div
+              style={{
+                fontFamily: HEAD,
+                fontSize: 12,
+                letterSpacing: "0.28em",
+                color: C.gold,
+                textAlign: "center",
+                marginTop: 10,
+              }}
+            >
+              GINISTRY PASSPORT
+            </div>
+            <div
+              style={{ fontFamily: HEAD, fontSize: 24, color: C.cream, textAlign: "center", margin: "8px 0" }}
+            >
+              Start your journey
+            </div>
+            <p style={{ fontSize: 16, opacity: 0.8, textAlign: "center", lineHeight: 1.5 }}>
+              Enter your name to create a free passport and keep a record of every gin you try at
+              The Ginistry.
+            </p>
+            <label
+              style={{
+                fontFamily: HEAD,
+                fontSize: 11,
+                letterSpacing: "0.16em",
+                color: C.gold,
+                display: "block",
+                margin: "18px 0 8px",
+              }}
+            >
+              YOUR NAME
+            </label>
+            <input
+              style={inputStyle}
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="e.g. Alex Fletcher"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") createPassport();
+              }}
+            />
+            {error && (
+              <div style={{ marginTop: 10, color: "#e08b6a", fontSize: 15 }}>{error}</div>
+            )}
+            <button
+              onClick={createPassport}
+              style={{ ...btn(true), width: "100%", marginTop: 18 }}
+            >
+              Create Passport
+            </button>
+            <button
+              onClick={() => setCreateOpen(false)}
+              style={{ ...btn(false), width: "100%", marginTop: 10 }}
+            >
+              Maybe later
+            </button>
+          </div>
+        </div>
+      );
+
   if (!ready) return <div style={{ background: C.bg, minHeight: "100vh" }} />;
 
   const pct = Math.round((tried.length / GINS.length) * 100);
@@ -374,6 +461,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
             </>
           )}
         </div>
+        {createModal}
       </div>
     );
   }
@@ -750,93 +838,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
         </div>
       )}
 
-      {/* Create passport modal */}
-      {createOpen && (
-        <div
-          onClick={() => setCreateOpen(false)}
-          style={{
-            position: "fixed",
-            inset: 0,
-            background: "rgba(0,0,0,0.75)",
-            zIndex: 60,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: 24,
-          }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: C.card,
-              border: `1px solid ${C.gold}`,
-              borderRadius: 16,
-              padding: "28px 24px",
-              maxWidth: 360,
-              width: "100%",
-            }}
-          >
-            <div style={{ fontSize: 44, textAlign: "center" }}>🥃</div>
-            <div
-              style={{
-                fontFamily: HEAD,
-                fontSize: 12,
-                letterSpacing: "0.28em",
-                color: C.gold,
-                textAlign: "center",
-                marginTop: 10,
-              }}
-            >
-              GINISTRY PASSPORT
-            </div>
-            <div
-              style={{ fontFamily: HEAD, fontSize: 24, color: C.cream, textAlign: "center", margin: "8px 0" }}
-            >
-              Start your journey
-            </div>
-            <p style={{ fontSize: 16, opacity: 0.8, textAlign: "center", lineHeight: 1.5 }}>
-              Enter your name to create a free passport and keep a record of every gin you try at
-              The Ginistry.
-            </p>
-            <label
-              style={{
-                fontFamily: HEAD,
-                fontSize: 11,
-                letterSpacing: "0.16em",
-                color: C.gold,
-                display: "block",
-                margin: "18px 0 8px",
-              }}
-            >
-              YOUR NAME
-            </label>
-            <input
-              style={inputStyle}
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="e.g. Alex Fletcher"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") createPassport();
-              }}
-            />
-            {error && (
-              <div style={{ marginTop: 10, color: "#e08b6a", fontSize: 15 }}>{error}</div>
-            )}
-            <button
-              onClick={createPassport}
-              style={{ ...btn(true), width: "100%", marginTop: 18 }}
-            >
-              Create Passport
-            </button>
-            <button
-              onClick={() => setCreateOpen(false)}
-              style={{ ...btn(false), width: "100%", marginTop: 10 }}
-            >
-              Maybe later
-            </button>
-          </div>
-        </div>
-      )}
+      {createModal}
 
       {/* Milestone celebration */}
       {celebration && (
