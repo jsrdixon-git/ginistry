@@ -44,6 +44,16 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
 };
 
+const labelStyle: React.CSSProperties = {
+  fontFamily: HEAD,
+  fontSize: 11,
+  letterSpacing: "0.16em",
+  color: C.gold,
+  display: "block",
+  margin: "16px 0 8px",
+};
+
+
 export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
   const gins = useMemo(() => ginsProp ?? [], [ginsProp]);
   const GINS = gins;
