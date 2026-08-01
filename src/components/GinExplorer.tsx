@@ -130,6 +130,8 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
 
 
   const tried = passport?.tried ?? [];
+  const ratings = passport?.ratings ?? {};
+
   const triedSet = useMemo(() => new Set(tried), [tried]);
 
   const filtered = useMemo(() => {
