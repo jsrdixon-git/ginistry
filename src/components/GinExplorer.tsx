@@ -164,7 +164,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
       "GINS TRIED:",
       ...passport.tried.map((id, i) => {
         const g = GINS.find((x) => x.id === id);
-        return g ? `${i + 1}. ${g.name} — ${g.style}, ${g.origin} (${g.abv}%)` : "";
+        return g ? `${i + 1}. ${g.name} — ${g.style}, ${g.origin} (${g.abv}% ABV)` : "";
       }),
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
@@ -356,7 +356,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
                       >
                         <div style={{ fontFamily: HEAD, fontSize: 15 }}>{g.name}</div>
                         <div style={{ fontSize: 15, opacity: 0.7 }}>
-                          {g.style} · {g.origin} · {g.abv}%
+                          {g.style} · {g.origin} · {g.abv}% ABV
                         </div>
                       </div>
                     );
@@ -388,7 +388,24 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
+          <button
+            onClick={() => {
+              setScreen("main");
+              setSelected(null);
+              setSearch("");
+              setStyle("All");
+              setTriedOnly(false);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              textAlign: "left",
+              cursor: "pointer",
+            }}
+            aria-label="Go to home screen"
+          >
             <div
               style={{
                 fontFamily: HEAD,
@@ -399,10 +416,10 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
             >
               The Ginistry
             </div>
-            <div style={{ fontSize: 12, letterSpacing: "0.24em", opacity: 0.6, fontFamily: HEAD }}>
+            <div style={{ fontSize: 12, letterSpacing: "0.24em", opacity: 0.6, fontFamily: HEAD, color: C.cream }}>
               GIN EXPLORER
             </div>
-          </div>
+          </button>
           <button
             onClick={() => setScreen("passport")}
             style={{ ...btn(false), padding: "8px 14px", fontSize: 11 }}
@@ -580,7 +597,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
                       }}
                     >
                       <span>{g.name}</span>
-                      <span style={{ color: C.gold, fontSize: 13, flexShrink: 0 }}>{g.abv}%</span>
+                      <span style={{ color: C.gold, fontSize: 13, flexShrink: 0 }}>{g.abv}% ABV</span>
                     </div>
                     <div
                       style={{
@@ -667,7 +684,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
             />
             <div style={{ fontFamily: HEAD, fontSize: 24, color: C.gold }}>{selected.name}</div>
             <div style={{ fontFamily: HEAD, fontSize: 13, opacity: 0.7, marginTop: 4 }}>
-              {selected.style} · {selected.origin} · {selected.abv}%
+              {selected.style} · {selected.origin} · {selected.abv}% ABV
             </div>
             <p style={{ fontSize: 19, lineHeight: 1.5, marginTop: 16 }}>{selected.description}</p>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 16 }}>
