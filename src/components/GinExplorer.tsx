@@ -218,7 +218,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
       "Oxted, Surrey",
       "",
       `Name: ${passport.profile.name}`,
-      `Passport ID: ${passport.profile.id}`,
+      `Account: ${passport.profile.email}`,
       `Gins tried: ${passport.tried.length} / ${GINS.length}`,
       "",
       "GINS TRIED:",
