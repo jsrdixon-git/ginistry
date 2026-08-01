@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MILESTONES, STYLE_FILTERS, type Gin } from "@/data/gins";
+import { supabase } from "@/integrations/supabase/client";
 
 const C = {
   bg: "#2c2416",
@@ -11,24 +12,11 @@ const C = {
 const HEAD = "'Cinzel', serif";
 const BODY = "'Cormorant Garamond', serif";
 
-const CURRENT_KEY = "ginistry_current_user";
+type Passport = {
+  profile: { name: string; id: string; email: string; created: string };
+  tried: number[];
+};
 
-type Passport = { profile: { name: string; id: string; created: string }; tried: number[] };
-
-function loadPassport(id: string): Passport | null {
-  try {
-    const raw = localStorage.getItem(`passport:${id}`);
-    return raw ? (JSON.parse(raw) as Passport) : null;
-  } catch {
-    return null;
-  }
-}
-function savePassport(p: Passport) {
-  localStorage.setItem(`passport:${p.profile.id}`, JSON.stringify(p));
-}
-function newId() {
-  return "gp_" + Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6);
-}
 
 const btn = (filled: boolean): React.CSSProperties => ({
   fontFamily: HEAD,
@@ -56,6 +44,16 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
 };
 
+const labelStyle: React.CSSProperties = {
+  fontFamily: HEAD,
+  fontSize: 11,
+  letterSpacing: "0.16em",
+  color: C.gold,
+  display: "block",
+  margin: "16px 0 8px",
+};
+
+
 export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
   const gins = useMemo(() => ginsProp ?? [], [ginsProp]);
   const GINS = gins;
@@ -73,6 +71,10 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
   const [ready, setReady] = useState(false);
   const [screen, setScreen] = useState<"main" | "passport">("main");
   const [nameInput, setNameInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [authMode, setAuthMode] = useState<"signup" | "signin">("signup");
+  const [authBusy, setAuthBusy] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [style, setStyle] = useState("All");
@@ -86,19 +88,40 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
   const sheetStartY = useRef(0);
   const isDragging = useRef(false);
 
-  useEffect(() => {
-    try {
-      const cur = localStorage.getItem(CURRENT_KEY);
-      if (cur) {
-        const { passportId } = JSON.parse(cur);
-        const p = passportId ? loadPassport(passportId) : null;
-        if (p) setPassport(p);
-      }
-    } catch {
-      /* ignore */
-    }
-    setReady(true);
+  const loadAccount = useCallback(async (user: { id: string; email?: string }) => {
+    const [{ data: profile }, { data: rows }] = await Promise.all([
+      supabase.from("profiles").select("display_name, created_at").eq("id", user.id).maybeSingle(),
+      supabase.from("tried_gins").select("gin_id").eq("user_id", user.id),
+    ]);
+    setPassport({
+      profile: {
+        name: profile?.display_name || user.email?.split("@")[0] || "Explorer",
+        id: user.id,
+        email: user.email ?? "",
+        created: profile?.created_at ?? new Date().toISOString(),
+      },
+      tried: (rows ?? []).map((r) => r.gin_id),
+    });
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      const user = data.session?.user;
+      if (user) void loadAccount(user);
+      setReady(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") setPassport(null);
+      else if (session?.user) void loadAccount(session.user);
+    });
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [loadAccount]);
+
 
   const tried = passport?.tried ?? [];
   const triedSet = useMemo(() => new Set(tried), [tried]);
@@ -139,26 +162,54 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
       ...current,
       tried: has ? current.tried.filter((x) => x !== id) : [...current.tried, id],
     };
-    savePassport(next);
     setPassport(next);
+    const userId = current.profile.id;
+    void (has
+      ? supabase.from("tried_gins").delete().eq("user_id", userId).eq("gin_id", id)
+      : supabase.from("tried_gins").insert({ user_id: userId, gin_id: id }));
     if (!has) {
       const m = MILESTONE_LIST.find((mm) => mm.count === next.tried.length);
       if (m) setCelebration(m);
     }
   }
 
-
-  function createPassport() {
-    const name = nameInput.trim();
-    if (!name) return setError("Please enter your name.");
-    const id = newId();
-    const p: Passport = { profile: { name, id, created: new Date().toISOString() }, tried: [] };
-    savePassport(p);
-    localStorage.setItem(CURRENT_KEY, JSON.stringify({ passportId: id }));
-    setPassport(p);
-    setCreateOpen(false);
+  async function submitAuth() {
+    const email = emailInput.trim();
+    const password = passwordInput;
+    if (!email || !password) return setError("Please enter your email and password.");
+    if (authMode === "signup" && !nameInput.trim()) return setError("Please enter your name.");
+    setAuthBusy(true);
     setError("");
+    try {
+      if (authMode === "signup") {
+        const { error: err } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { display_name: nameInput.trim() },
+          },
+        });
+        if (err) throw err;
+      } else {
+        const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+        if (err) throw err;
+      }
+      setCreateOpen(false);
+      setPasswordInput("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+    } finally {
+      setAuthBusy(false);
+    }
   }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    setPassport(null);
+    setScreen("main");
+  }
+
 
   function download() {
     if (!passport) return;
@@ -167,7 +218,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
       "Oxted, Surrey",
       "",
       `Name: ${passport.profile.name}`,
-      `Passport ID: ${passport.profile.id}`,
+      `Account: ${passport.profile.email}`,
       `Gins tried: ${passport.tried.length} / ${GINS.length}`,
       "",
       "GINS TRIED:",
@@ -208,6 +259,9 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
               padding: "28px 24px",
               maxWidth: 360,
               width: "100%",
+              maxHeight: "88vh",
+              overflowY: "auto",
+
             }}
           >
             <div style={{ fontSize: 44, textAlign: "center" }}>🥃</div>
@@ -226,48 +280,99 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
             <div
               style={{ fontFamily: HEAD, fontSize: 24, color: C.cream, textAlign: "center", margin: "8px 0" }}
             >
-              Start your journey
+              {authMode === "signup" ? "Start your journey" : "Welcome back"}
             </div>
             <p style={{ fontSize: 16, opacity: 0.8, textAlign: "center", lineHeight: 1.5 }}>
-              Enter your name to create a free passport and keep a record of every gin you try at
-              The Ginistry.
+              {authMode === "signup"
+                ? "Create a free account and keep a record of every gin you try at The Ginistry — on any device."
+                : "Sign in to pick up your passport where you left off."}
             </p>
-            <label
-              style={{
-                fontFamily: HEAD,
-                fontSize: 11,
-                letterSpacing: "0.16em",
-                color: C.gold,
-                display: "block",
-                margin: "18px 0 8px",
-              }}
-            >
-              YOUR NAME
-            </label>
+
+            {authMode === "signup" && (
+              <>
+                <label style={labelStyle}>YOUR NAME</label>
+                <input
+                  style={inputStyle}
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  placeholder="e.g. Alex Fletcher"
+                  autoComplete="name"
+                />
+              </>
+            )}
+
+            <label style={labelStyle}>EMAIL</label>
             <input
               style={inputStyle}
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="e.g. Alex Fletcher"
+              type="email"
+              inputMode="email"
+              autoCapitalize="none"
+              autoComplete="email"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="you@example.com"
+            />
+
+            <label style={labelStyle}>PASSWORD</label>
+            <input
+              style={inputStyle}
+              type="password"
+              autoComplete={authMode === "signup" ? "new-password" : "current-password"}
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="At least 6 characters"
               onKeyDown={(e) => {
-                if (e.key === "Enter") createPassport();
+                if (e.key === "Enter") void submitAuth();
               }}
             />
+
             {error && (
               <div style={{ marginTop: 10, color: "#e08b6a", fontSize: 15 }}>{error}</div>
             )}
             <button
-              onClick={createPassport}
-              style={{ ...btn(true), width: "100%", marginTop: 18 }}
+              type="button"
+              onClick={() => void submitAuth()}
+              disabled={authBusy}
+              style={{
+                ...btn(true),
+                width: "100%",
+                marginTop: 18,
+                minHeight: 48,
+                opacity: authBusy ? 0.6 : 1,
+                touchAction: "manipulation",
+                WebkitTapHighlightColor: "transparent",
+              }}
             >
-              Create Passport
+              {authBusy
+                ? "Please wait…"
+                : authMode === "signup"
+                  ? "Create Passport"
+                  : "Sign In"}
             </button>
             <button
+              type="button"
+              onClick={() => {
+                setError("");
+                setAuthMode(authMode === "signup" ? "signin" : "signup");
+              }}
+              style={{ ...btn(false), width: "100%", marginTop: 10, minHeight: 44 }}
+            >
+              {authMode === "signup" ? "I already have a passport" : "Create a new passport"}
+            </button>
+            <button
+              type="button"
               onClick={() => setCreateOpen(false)}
-              style={{ ...btn(false), width: "100%", marginTop: 10 }}
+              style={{
+                ...btn(false),
+                width: "100%",
+                marginTop: 10,
+                border: "none",
+                opacity: 0.7,
+              }}
             >
               Maybe later
             </button>
+
           </div>
         </div>
       );
@@ -309,7 +414,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
                 Your Ginistry Passport
               </div>
               <p style={{ fontSize: 17, opacity: 0.8, marginTop: 10, lineHeight: 1.5 }}>
-                Create a free passport to track the gins you try, collect stamps, and unlock
+                Create a free account to track the gins you try, collect stamps, and unlock
                 tasting milestones.
               </p>
               <button
@@ -341,19 +446,18 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
               </div>
               <div
                 style={{
-                  marginTop: 12,
+                  marginTop: 8,
                   display: "flex",
                   alignItems: "center",
                   gap: 10,
                   flexWrap: "wrap",
                 }}
               >
-                <code style={{ fontFamily: "monospace", fontSize: 15, color: C.cream }}>
-                  {passport.profile.id}
-                </code>
+                <span style={{ fontSize: 16, opacity: 0.8 }}>{passport.profile.email}</span>
                 <button
+                  type="button"
                   onClick={() => {
-                    navigator.clipboard?.writeText(passport.profile.id);
+                    navigator.clipboard?.writeText(passport.profile.email);
                     setCopied(true);
                     setTimeout(() => setCopied(false), 1500);
                   }}
@@ -361,7 +465,15 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
                 >
                   {copied ? "Copied" : "Copy"}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => void signOut()}
+                  style={{ ...btn(false), padding: "6px 12px", fontSize: 11 }}
+                >
+                  Sign Out
+                </button>
               </div>
+
 
               <div style={{ marginTop: 20, fontSize: 40, fontFamily: HEAD, color: C.gold }}>
                 {tried.length}
