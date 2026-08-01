@@ -446,19 +446,18 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
               </div>
               <div
                 style={{
-                  marginTop: 12,
+                  marginTop: 8,
                   display: "flex",
                   alignItems: "center",
                   gap: 10,
                   flexWrap: "wrap",
                 }}
               >
-                <code style={{ fontFamily: "monospace", fontSize: 15, color: C.cream }}>
-                  {passport.profile.id}
-                </code>
+                <span style={{ fontSize: 16, opacity: 0.8 }}>{passport.profile.email}</span>
                 <button
+                  type="button"
                   onClick={() => {
-                    navigator.clipboard?.writeText(passport.profile.id);
+                    navigator.clipboard?.writeText(passport.profile.email);
                     setCopied(true);
                     setTimeout(() => setCopied(false), 1500);
                   }}
@@ -466,7 +465,15 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
                 >
                   {copied ? "Copied" : "Copy"}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => void signOut()}
+                  style={{ ...btn(false), padding: "6px 12px", fontSize: 11 }}
+                >
+                  Sign Out
+                </button>
               </div>
+
 
               <div style={{ marginTop: 20, fontSize: 40, fontFamily: HEAD, color: C.gold }}>
                 {tried.length}
