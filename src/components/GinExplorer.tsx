@@ -158,9 +158,12 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
     if (!ensurePassport()) return;
     const current = passport!;
     const has = current.tried.includes(id);
+    const nextRatings = { ...current.ratings };
+    if (has) delete nextRatings[id];
     const next: Passport = {
       ...current,
       tried: has ? current.tried.filter((x) => x !== id) : [...current.tried, id],
+      ratings: nextRatings,
     };
     setPassport(next);
     const userId = current.profile.id;
@@ -172,6 +175,18 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
       if (m) setCelebration(m);
     }
   }
+
+  function setRating(id: number, value: number) {
+    const current = passport;
+    if (!current) return;
+    setPassport({ ...current, ratings: { ...current.ratings, [id]: value } });
+    void supabase
+      .from("tried_gins")
+      .update({ rating: value })
+      .eq("user_id", current.profile.id)
+      .eq("gin_id", id);
+  }
+
 
   async function submitAuth() {
     const email = emailInput.trim();
