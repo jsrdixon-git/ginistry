@@ -224,8 +224,12 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
       "GINS TRIED:",
       ...passport.tried.map((id, i) => {
         const g = GINS.find((x) => x.id === id);
-        return g ? `${i + 1}. ${g.name} — ${g.style}, ${g.origin} (${g.abv}% ABV)` : "";
+        if (!g) return "";
+        const r = passport.ratings[id] ?? 0;
+        const stars = r ? ` — ${"★".repeat(r)}${"☆".repeat(3 - r)}` : "";
+        return `${i + 1}. ${g.name} — ${g.style}, ${g.origin} (${g.abv}% ABV)${stars}`;
       }),
+
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
