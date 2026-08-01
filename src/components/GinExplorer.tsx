@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { MILESTONES, STYLE_FILTERS, type Gin } from "@/data/gins";
 
 const C = {
