@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { GINS, MILESTONES, STYLE_FILTERS, type Gin } from "@/data/gins";
+import { MILESTONES, STYLE_FILTERS, type Gin } from "@/data/gins";
 
 const C = {
   bg: "#2c2416",
@@ -56,7 +56,18 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
 };
 
-export default function GinExplorer() {
+export default function GinExplorer({ gins }: { gins: Gin[] }) {
+  const GINS = gins;
+  const MILESTONE_LIST = useMemo(
+    () => MILESTONES.map((m) => (m.title === "Gin Master" ? { ...m, count: gins.length } : m)),
+    [gins.length],
+  );
+  const STYLES = useMemo(() => {
+    const present = new Set(gins.map((g) => g.style));
+    const ordered = STYLE_FILTERS.filter((s) => s === "All" || present.has(s));
+    const extra = [...present].filter((s) => !STYLE_FILTERS.includes(s)).sort();
+    return [...ordered, ...extra];
+  }, [gins]);
   const [passport, setPassport] = useState<Passport | null>(null);
   const [ready, setReady] = useState(false);
   const [screen, setScreen] = useState<"main" | "passport">("main");
@@ -121,7 +132,7 @@ export default function GinExplorer() {
     savePassport(next);
     setPassport(next);
     if (!has) {
-      const m = MILESTONES.find((mm) => mm.count === next.tried.length);
+      const m = MILESTONE_LIST.find((mm) => mm.count === next.tried.length);
       if (m) setCelebration(m);
     }
   }
@@ -167,7 +178,7 @@ export default function GinExplorer() {
   if (!ready) return <div style={{ background: C.bg, minHeight: "100vh" }} />;
 
   const pct = Math.round((tried.length / GINS.length) * 100);
-  const nextMilestone = MILESTONES.find((m) => m.count > tried.length);
+  const nextMilestone = MILESTONE_LIST.find((m) => m.count > tried.length);
 
   /* ---------- Passport screen ---------- */
   if (screen === "passport") {
@@ -278,7 +289,7 @@ export default function GinExplorer() {
             MILESTONES
           </h2>
           <div style={{ display: "grid", gap: 10 }}>
-            {MILESTONES.map((m) => {
+            {MILESTONE_LIST.map((m) => {
               const done = tried.length >= m.count;
               return (
                 <div
@@ -439,7 +450,7 @@ export default function GinExplorer() {
             WebkitOverflowScrolling: "touch",
           }}
         >
-          {STYLE_FILTERS.map((s) => (
+          {STYLES.map((s) => (
             <button
               key={s}
               onClick={() => setStyle(s)}
