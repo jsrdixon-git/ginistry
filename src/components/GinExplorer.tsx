@@ -315,11 +315,14 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
               <button
                 type="button"
                 onClick={openCreatePassport}
-                onTouchEnd={(event) => {
-                  event.preventDefault();
-                  openCreatePassport();
+                style={{
+                  ...btn(true),
+                  width: "100%",
+                  marginTop: 20,
+                  minHeight: 48,
+                  touchAction: "manipulation",
+                  WebkitTapHighlightColor: "transparent",
                 }}
-                style={{ ...btn(true), width: "100%", marginTop: 20 }}
               >
                 Start My Passport
               </button>
