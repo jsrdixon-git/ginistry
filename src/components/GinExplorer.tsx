@@ -259,6 +259,9 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
               padding: "28px 24px",
               maxWidth: 360,
               width: "100%",
+              maxHeight: "88vh",
+              overflowY: "auto",
+
             }}
           >
             <div style={{ fontSize: 44, textAlign: "center" }}>🥃</div>
