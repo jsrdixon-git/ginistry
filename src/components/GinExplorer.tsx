@@ -56,7 +56,8 @@ const inputStyle: React.CSSProperties = {
   outline: "none",
 };
 
-export default function GinExplorer({ gins }: { gins: Gin[] }) {
+export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
+  const gins = useMemo(() => ginsProp ?? [], [ginsProp]);
   const GINS = gins;
   const MILESTONE_LIST = useMemo(
     () => MILESTONES.map((m) => (m.title === "Gin Master" ? { ...m, count: gins.length } : m)),

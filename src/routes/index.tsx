@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import GinExplorer from "@/components/GinExplorer";
 import { fetchGins } from "@/lib/gins.functions";
+import { GINS } from "@/data/gins";
 
 const title = "The Ginistry Gin Explorer — Gin Menu in Oxted, Surrey";
 const description =
@@ -29,6 +30,6 @@ export const Route = createFileRoute("/")({
 });
 
 function Index() {
-  const { gins } = Route.useLoaderData();
-  return <GinExplorer gins={gins} />;
+  const data = Route.useLoaderData();
+  return <GinExplorer gins={data?.gins ?? GINS} />;
 }
