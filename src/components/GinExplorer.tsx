@@ -414,7 +414,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
                 Your Ginistry Passport
               </div>
               <p style={{ fontSize: 17, opacity: 0.8, marginTop: 10, lineHeight: 1.5 }}>
-                Create a free passport to track the gins you try, collect stamps, and unlock
+                Create a free account to track the gins you try, collect stamps, and unlock
                 tasting milestones.
               </p>
               <button
