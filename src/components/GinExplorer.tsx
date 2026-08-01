@@ -574,6 +574,51 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
                         <div style={{ fontSize: 15, opacity: 0.7 }}>
                           {g.style} · {g.origin} · {g.abv}% ABV
                         </div>
+                        <div
+                          style={{
+                            marginTop: 8,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          {[1, 2, 3].map((n) => {
+                            const active = (ratings[id] ?? 0) >= n;
+                            return (
+                              <button
+                                key={n}
+                                type="button"
+                                aria-label={`Rate ${g.name} ${n} star${n > 1 ? "s" : ""}`}
+                                onClick={() => setRating(id, (ratings[id] ?? 0) === n ? 0 : n)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  padding: "4px 2px",
+                                  cursor: "pointer",
+                                  fontSize: 22,
+                                  lineHeight: 1,
+                                  color: active ? C.gold : "#6b5c3a",
+                                  touchAction: "manipulation",
+                                  WebkitTapHighlightColor: "transparent",
+                                }}
+                              >
+                                {active ? "★" : "☆"}
+                              </button>
+                            );
+                          })}
+                          <span
+                            style={{
+                              fontFamily: HEAD,
+                              fontSize: 10,
+                              letterSpacing: "0.14em",
+                              opacity: 0.55,
+                              marginLeft: 4,
+                            }}
+                          >
+                            {ratings[id] ? `${ratings[id]}/3` : "RATE IT"}
+                          </span>
+                        </div>
+
                       </div>
                     );
                   })}
