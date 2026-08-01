@@ -267,48 +267,99 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
             <div
               style={{ fontFamily: HEAD, fontSize: 24, color: C.cream, textAlign: "center", margin: "8px 0" }}
             >
-              Start your journey
+              {authMode === "signup" ? "Start your journey" : "Welcome back"}
             </div>
             <p style={{ fontSize: 16, opacity: 0.8, textAlign: "center", lineHeight: 1.5 }}>
-              Enter your name to create a free passport and keep a record of every gin you try at
-              The Ginistry.
+              {authMode === "signup"
+                ? "Create a free account and keep a record of every gin you try at The Ginistry — on any device."
+                : "Sign in to pick up your passport where you left off."}
             </p>
-            <label
-              style={{
-                fontFamily: HEAD,
-                fontSize: 11,
-                letterSpacing: "0.16em",
-                color: C.gold,
-                display: "block",
-                margin: "18px 0 8px",
-              }}
-            >
-              YOUR NAME
-            </label>
+
+            {authMode === "signup" && (
+              <>
+                <label style={labelStyle}>YOUR NAME</label>
+                <input
+                  style={inputStyle}
+                  value={nameInput}
+                  onChange={(e) => setNameInput(e.target.value)}
+                  placeholder="e.g. Alex Fletcher"
+                  autoComplete="name"
+                />
+              </>
+            )}
+
+            <label style={labelStyle}>EMAIL</label>
             <input
               style={inputStyle}
-              value={nameInput}
-              onChange={(e) => setNameInput(e.target.value)}
-              placeholder="e.g. Alex Fletcher"
+              type="email"
+              inputMode="email"
+              autoCapitalize="none"
+              autoComplete="email"
+              value={emailInput}
+              onChange={(e) => setEmailInput(e.target.value)}
+              placeholder="you@example.com"
+            />
+
+            <label style={labelStyle}>PASSWORD</label>
+            <input
+              style={inputStyle}
+              type="password"
+              autoComplete={authMode === "signup" ? "new-password" : "current-password"}
+              value={passwordInput}
+              onChange={(e) => setPasswordInput(e.target.value)}
+              placeholder="At least 6 characters"
               onKeyDown={(e) => {
-                if (e.key === "Enter") createPassport();
+                if (e.key === "Enter") void submitAuth();
               }}
             />
+
             {error && (
               <div style={{ marginTop: 10, color: "#e08b6a", fontSize: 15 }}>{error}</div>
             )}
             <button
-              onClick={createPassport}
-              style={{ ...btn(true), width: "100%", marginTop: 18 }}
+              type="button"
+              onClick={() => void submitAuth()}
+              disabled={authBusy}
+              style={{
+                ...btn(true),
+                width: "100%",
+                marginTop: 18,
+                minHeight: 48,
+                opacity: authBusy ? 0.6 : 1,
+                touchAction: "manipulation",
+                WebkitTapHighlightColor: "transparent",
+              }}
             >
-              Create Passport
+              {authBusy
+                ? "Please wait…"
+                : authMode === "signup"
+                  ? "Create Passport"
+                  : "Sign In"}
             </button>
             <button
+              type="button"
+              onClick={() => {
+                setError("");
+                setAuthMode(authMode === "signup" ? "signin" : "signup");
+              }}
+              style={{ ...btn(false), width: "100%", marginTop: 10, minHeight: 44 }}
+            >
+              {authMode === "signup" ? "I already have a passport" : "Create a new passport"}
+            </button>
+            <button
+              type="button"
               onClick={() => setCreateOpen(false)}
-              style={{ ...btn(false), width: "100%", marginTop: 10 }}
+              style={{
+                ...btn(false),
+                width: "100%",
+                marginTop: 10,
+                border: "none",
+                opacity: 0.7,
+              }}
             >
               Maybe later
             </button>
+
           </div>
         </div>
       );
