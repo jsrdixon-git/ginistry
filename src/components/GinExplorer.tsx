@@ -91,8 +91,10 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
   const loadAccount = useCallback(async (user: { id: string; email?: string }) => {
     const [{ data: profile }, { data: rows }] = await Promise.all([
       supabase.from("profiles").select("display_name, created_at").eq("id", user.id).maybeSingle(),
-      supabase.from("tried_gins").select("gin_id").eq("user_id", user.id),
+      supabase.from("tried_gins").select("gin_id, rating").eq("user_id", user.id),
     ]);
+    const ratingMap: Record<number, number> = {};
+    for (const r of rows ?? []) ratingMap[r.gin_id] = r.rating ?? 0;
     setPassport({
       profile: {
         name: profile?.display_name || user.email?.split("@")[0] || "Explorer",
@@ -101,8 +103,10 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
         created: profile?.created_at ?? new Date().toISOString(),
       },
       tried: (rows ?? []).map((r) => r.gin_id),
+      ratings: ratingMap,
     });
   }, []);
+
 
   useEffect(() => {
     let active = true;
