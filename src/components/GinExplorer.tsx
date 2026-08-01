@@ -120,10 +120,15 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
 
   function ensurePassport() {
     if (!passport) {
-      setCreateOpen(true);
+      openCreatePassport();
       return false;
     }
     return true;
+  }
+
+  function openCreatePassport() {
+    setError("");
+    setCreateOpen(true);
   }
 
   function toggleTried(id: number) {
@@ -308,7 +313,12 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
                 tasting milestones.
               </p>
               <button
-                onClick={() => setCreateOpen(true)}
+                type="button"
+                onClick={openCreatePassport}
+                onTouchEnd={(event) => {
+                  event.preventDefault();
+                  openCreatePassport();
+                }}
                 style={{ ...btn(true), width: "100%", marginTop: 20 }}
               >
                 Start My Passport
@@ -607,7 +617,8 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
               </div>
             </div>
             <button
-              onClick={() => setCreateOpen(true)}
+              type="button"
+              onClick={openCreatePassport}
               style={{ ...btn(true), padding: "8px 14px", fontSize: 11, flexShrink: 0 }}
             >
               Start free
