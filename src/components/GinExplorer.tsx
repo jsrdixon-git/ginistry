@@ -713,7 +713,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
             onClick={() => setScreen("passport")}
             style={{ ...btn(false), padding: "8px 14px", fontSize: 11 }}
           >
-            {passport ? "Passport" : "Start Passport"}
+            Gin Passport
           </button>
         </div>
 
