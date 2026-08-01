@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { MILESTONES, STYLE_FILTERS, type Gin } from "@/data/gins";
+import { supabase } from "@/integrations/supabase/client";
 
 const C = {
   bg: "#2c2416",
@@ -11,24 +12,11 @@ const C = {
 const HEAD = "'Cinzel', serif";
 const BODY = "'Cormorant Garamond', serif";
 
-const CURRENT_KEY = "ginistry_current_user";
+type Passport = {
+  profile: { name: string; id: string; email: string; created: string };
+  tried: number[];
+};
 
-type Passport = { profile: { name: string; id: string; created: string }; tried: number[] };
-
-function loadPassport(id: string): Passport | null {
-  try {
-    const raw = localStorage.getItem(`passport:${id}`);
-    return raw ? (JSON.parse(raw) as Passport) : null;
-  } catch {
-    return null;
-  }
-}
-function savePassport(p: Passport) {
-  localStorage.setItem(`passport:${p.profile.id}`, JSON.stringify(p));
-}
-function newId() {
-  return "gp_" + Math.random().toString(36).slice(2, 8) + Math.random().toString(36).slice(2, 6);
-}
 
 const btn = (filled: boolean): React.CSSProperties => ({
   fontFamily: HEAD,
