@@ -265,7 +265,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
             </button>
           </div>
         </div>
-      )};
+      );
 
   if (!ready) return <div style={{ background: C.bg, minHeight: "100vh" }} />;
 
