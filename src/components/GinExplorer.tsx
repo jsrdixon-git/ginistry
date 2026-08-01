@@ -61,6 +61,10 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
   const [ready, setReady] = useState(false);
   const [screen, setScreen] = useState<"main" | "passport">("main");
   const [nameInput, setNameInput] = useState("");
+  const [emailInput, setEmailInput] = useState("");
+  const [passwordInput, setPasswordInput] = useState("");
+  const [authMode, setAuthMode] = useState<"signup" | "signin">("signup");
+  const [authBusy, setAuthBusy] = useState(false);
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [style, setStyle] = useState("All");
@@ -74,19 +78,40 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
   const sheetStartY = useRef(0);
   const isDragging = useRef(false);
 
-  useEffect(() => {
-    try {
-      const cur = localStorage.getItem(CURRENT_KEY);
-      if (cur) {
-        const { passportId } = JSON.parse(cur);
-        const p = passportId ? loadPassport(passportId) : null;
-        if (p) setPassport(p);
-      }
-    } catch {
-      /* ignore */
-    }
-    setReady(true);
+  const loadAccount = useCallback(async (user: { id: string; email?: string }) => {
+    const [{ data: profile }, { data: rows }] = await Promise.all([
+      supabase.from("profiles").select("display_name, created_at").eq("id", user.id).maybeSingle(),
+      supabase.from("tried_gins").select("gin_id").eq("user_id", user.id),
+    ]);
+    setPassport({
+      profile: {
+        name: profile?.display_name || user.email?.split("@")[0] || "Explorer",
+        id: user.id,
+        email: user.email ?? "",
+        created: profile?.created_at ?? new Date().toISOString(),
+      },
+      tried: (rows ?? []).map((r) => r.gin_id),
+    });
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    supabase.auth.getSession().then(({ data }) => {
+      if (!active) return;
+      const user = data.session?.user;
+      if (user) void loadAccount(user);
+      setReady(true);
+    });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "SIGNED_OUT") setPassport(null);
+      else if (session?.user) void loadAccount(session.user);
+    });
+    return () => {
+      active = false;
+      sub.subscription.unsubscribe();
+    };
+  }, [loadAccount]);
+
 
   const tried = passport?.tried ?? [];
   const triedSet = useMemo(() => new Set(tried), [tried]);
