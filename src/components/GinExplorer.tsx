@@ -597,7 +597,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
                       }}
                     >
                       <span>{g.name}</span>
-                      <span style={{ color: C.gold, fontSize: 13, flexShrink: 0 }}>{g.abv}%</span>
+                      <span style={{ color: C.gold, fontSize: 13, flexShrink: 0 }}>{g.abv}% ABV</span>
                     </div>
                     <div
                       style={{
