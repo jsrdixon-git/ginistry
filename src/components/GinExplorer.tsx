@@ -152,26 +152,54 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
       ...current,
       tried: has ? current.tried.filter((x) => x !== id) : [...current.tried, id],
     };
-    savePassport(next);
     setPassport(next);
+    const userId = current.profile.id;
+    void (has
+      ? supabase.from("tried_gins").delete().eq("user_id", userId).eq("gin_id", id)
+      : supabase.from("tried_gins").insert({ user_id: userId, gin_id: id }));
     if (!has) {
       const m = MILESTONE_LIST.find((mm) => mm.count === next.tried.length);
       if (m) setCelebration(m);
     }
   }
 
-
-  function createPassport() {
-    const name = nameInput.trim();
-    if (!name) return setError("Please enter your name.");
-    const id = newId();
-    const p: Passport = { profile: { name, id, created: new Date().toISOString() }, tried: [] };
-    savePassport(p);
-    localStorage.setItem(CURRENT_KEY, JSON.stringify({ passportId: id }));
-    setPassport(p);
-    setCreateOpen(false);
+  async function submitAuth() {
+    const email = emailInput.trim();
+    const password = passwordInput;
+    if (!email || !password) return setError("Please enter your email and password.");
+    if (authMode === "signup" && !nameInput.trim()) return setError("Please enter your name.");
+    setAuthBusy(true);
     setError("");
+    try {
+      if (authMode === "signup") {
+        const { error: err } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: window.location.origin,
+            data: { display_name: nameInput.trim() },
+          },
+        });
+        if (err) throw err;
+      } else {
+        const { error: err } = await supabase.auth.signInWithPassword({ email, password });
+        if (err) throw err;
+      }
+      setCreateOpen(false);
+      setPasswordInput("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Something went wrong. Please try again.");
+    } finally {
+      setAuthBusy(false);
+    }
   }
+
+  async function signOut() {
+    await supabase.auth.signOut();
+    setPassport(null);
+    setScreen("main");
+  }
+
 
   function download() {
     if (!passport) return;
