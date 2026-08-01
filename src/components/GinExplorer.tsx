@@ -388,7 +388,24 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
         }}
       >
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
+          <button
+            onClick={() => {
+              setScreen("main");
+              setSelected(null);
+              setSearch("");
+              setStyle("All");
+              setTriedOnly(false);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+            }}
+            style={{
+              background: "none",
+              border: "none",
+              padding: 0,
+              textAlign: "left",
+              cursor: "pointer",
+            }}
+            aria-label="Go to home screen"
+          >
             <div
               style={{
                 fontFamily: HEAD,
@@ -399,10 +416,10 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
             >
               The Ginistry
             </div>
-            <div style={{ fontSize: 12, letterSpacing: "0.24em", opacity: 0.6, fontFamily: HEAD }}>
+            <div style={{ fontSize: 12, letterSpacing: "0.24em", opacity: 0.6, fontFamily: HEAD, color: C.cream }}>
               GIN EXPLORER
             </div>
-          </div>
+          </button>
           <button
             onClick={() => setScreen("passport")}
             style={{ ...btn(false), padding: "8px 14px", fontSize: 11 }}
