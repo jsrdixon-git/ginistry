@@ -461,6 +461,7 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
             </>
           )}
         </div>
+        {createModal}
       </div>
     );
   }
