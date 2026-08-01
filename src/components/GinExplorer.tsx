@@ -60,9 +60,7 @@ export default function GinExplorer() {
   const [passport, setPassport] = useState<Passport | null>(null);
   const [ready, setReady] = useState(false);
   const [screen, setScreen] = useState<"main" | "passport">("main");
-  const [tab, setTab] = useState<"new" | "existing">("new");
   const [nameInput, setNameInput] = useState("");
-  const [idInput, setIdInput] = useState("");
   const [error, setError] = useState("");
   const [search, setSearch] = useState("");
   const [style, setStyle] = useState("All");
@@ -70,6 +68,7 @@ export default function GinExplorer() {
   const [selected, setSelected] = useState<Gin | null>(null);
   const [copied, setCopied] = useState(false);
   const [celebration, setCelebration] = useState<(typeof MILESTONES)[number] | null>(null);
+  const [createOpen, setCreateOpen] = useState(false);
 
   useEffect(() => {
     try {
@@ -103,8 +102,16 @@ export default function GinExplorer() {
     });
   }, [search, style, triedOnly, triedSet]);
 
+  function ensurePassport() {
+    if (!passport) {
+      setCreateOpen(true);
+      return false;
+    }
+    return true;
+  }
+
   function toggleTried(id: number) {
-    if (!passport) return;
+    if (!ensurePassport()) return;
     const has = passport.tried.includes(id);
     const next: Passport = {
       ...passport,
@@ -126,15 +133,7 @@ export default function GinExplorer() {
     savePassport(p);
     localStorage.setItem(CURRENT_KEY, JSON.stringify({ passportId: id }));
     setPassport(p);
-    setError("");
-  }
-
-  function loadExisting() {
-    const id = idInput.trim();
-    const p = loadPassport(id);
-    if (!p) return setError("No passport found with that ID.");
-    localStorage.setItem(CURRENT_KEY, JSON.stringify({ passportId: id }));
-    setPassport(p);
+    setCreateOpen(false);
     setError("");
   }
 
@@ -165,123 +164,6 @@ export default function GinExplorer() {
 
   if (!ready) return <div style={{ background: C.bg, minHeight: "100vh" }} />;
 
-  /* ---------- Welcome ---------- */
-  if (!passport) {
-    return (
-      <div
-        style={{
-          background: C.bg,
-          minHeight: "100vh",
-          color: C.cream,
-          fontFamily: BODY,
-          padding: "48px 20px",
-        }}
-      >
-        <div style={{ maxWidth: 460, margin: "0 auto" }}>
-          <div style={{ textAlign: "center", marginBottom: 32 }}>
-            <div style={{ color: C.gold, fontFamily: HEAD, letterSpacing: "0.35em", fontSize: 12 }}>
-              OXTED · SURREY
-            </div>
-            <h1
-              style={{
-                fontFamily: HEAD,
-                fontSize: 34,
-                color: C.gold,
-                margin: "12px 0 6px",
-                letterSpacing: "0.05em",
-              }}
-            >
-              The Ginistry
-            </h1>
-            <div style={{ fontSize: 19, opacity: 0.8, fontStyle: "italic" }}>
-              Gin Explorer — 102 gins await
-            </div>
-          </div>
-
-          <div style={{ display: "flex", gap: 8, marginBottom: 20 }}>
-            {(["new", "existing"] as const).map((t) => (
-              <button
-                key={t}
-                onClick={() => {
-                  setTab(t);
-                  setError("");
-                }}
-                style={{ ...btn(tab === t), flex: 1 }}
-              >
-                {t === "new" ? "New Passport" : "I Have a Passport"}
-              </button>
-            ))}
-          </div>
-
-          <div
-            style={{
-              background: C.card,
-              border: `1px solid ${C.border}`,
-              borderRadius: 14,
-              padding: 20,
-            }}
-          >
-            {tab === "new" ? (
-              <>
-                <label
-                  style={{
-                    fontFamily: HEAD,
-                    fontSize: 11,
-                    letterSpacing: "0.16em",
-                    color: C.gold,
-                    display: "block",
-                    marginBottom: 8,
-                  }}
-                >
-                  YOUR NAME
-                </label>
-                <input
-                  style={inputStyle}
-                  value={nameInput}
-                  onChange={(e) => setNameInput(e.target.value)}
-                  placeholder="e.g. Alex Fletcher"
-                />
-                <button
-                  onClick={createPassport}
-                  style={{ ...btn(true), width: "100%", marginTop: 16 }}
-                >
-                  Create Passport
-                </button>
-              </>
-            ) : (
-              <>
-                <label
-                  style={{
-                    fontFamily: HEAD,
-                    fontSize: 11,
-                    letterSpacing: "0.16em",
-                    color: C.gold,
-                    display: "block",
-                    marginBottom: 8,
-                  }}
-                >
-                  PASSPORT ID
-                </label>
-                <input
-                  style={inputStyle}
-                  value={idInput}
-                  onChange={(e) => setIdInput(e.target.value)}
-                  placeholder="gp_xxxxxx"
-                />
-                <button onClick={loadExisting} style={{ ...btn(true), width: "100%", marginTop: 16 }}>
-                  Load Passport
-                </button>
-              </>
-            )}
-            {error && (
-              <div style={{ marginTop: 12, color: "#e08b6a", fontSize: 16 }}>{error}</div>
-            )}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   const pct = Math.round((tried.length / GINS.length) * 100);
   const nextMilestone = MILESTONES.find((m) => m.count > tried.length);
 
@@ -299,61 +181,88 @@ export default function GinExplorer() {
       >
         <div style={{ maxWidth: 560, margin: "0 auto" }}>
           <button onClick={() => setScreen("main")} style={{ ...btn(false), marginBottom: 18 }}>
-            ← Back
+            ← Back to Explorer
           </button>
 
-          <div
-            style={{
-              background: C.card,
-              border: `1px solid ${C.border}`,
-              borderRadius: 14,
-              padding: 20,
-            }}
-          >
-            <div style={{ fontFamily: HEAD, fontSize: 22, color: C.gold }}>
-              {passport.profile.name}
-            </div>
+          {!passport ? (
             <div
               style={{
-                marginTop: 12,
-                display: "flex",
-                alignItems: "center",
-                gap: 10,
-                flexWrap: "wrap",
+                background: C.card,
+                border: `1px solid ${C.border}`,
+                borderRadius: 14,
+                padding: 28,
+                textAlign: "center",
               }}
             >
-              <code style={{ fontFamily: "monospace", fontSize: 15, color: C.cream }}>
-                {passport.profile.id}
-              </code>
+              <div style={{ fontSize: 44, marginBottom: 12 }}>🥃</div>
+              <div style={{ fontFamily: HEAD, fontSize: 22, color: C.gold }}>
+                Your Ginistry Passport
+              </div>
+              <p style={{ fontSize: 17, opacity: 0.8, marginTop: 10, lineHeight: 1.5 }}>
+                Create a free passport to track the gins you try, collect stamps, and unlock
+                tasting milestones.
+              </p>
               <button
-                onClick={() => {
-                  navigator.clipboard?.writeText(passport.profile.id);
-                  setCopied(true);
-                  setTimeout(() => setCopied(false), 1500);
-                }}
-                style={{ ...btn(false), padding: "6px 12px", fontSize: 11 }}
+                onClick={() => setCreateOpen(true)}
+                style={{ ...btn(true), width: "100%", marginTop: 20 }}
               >
-                {copied ? "Copied" : "Copy"}
+                Start My Passport
               </button>
             </div>
-
-            <div style={{ marginTop: 20, fontSize: 40, fontFamily: HEAD, color: C.gold }}>
-              {tried.length}
-              <span style={{ fontSize: 18, opacity: 0.7 }}> / {GINS.length} gins tried</span>
-            </div>
-
+          ) : (
             <div
               style={{
-                height: 8,
-                background: "#241d10",
-                borderRadius: 99,
-                overflow: "hidden",
-                marginTop: 12,
+                background: C.card,
+                border: `1px solid ${C.border}`,
+                borderRadius: 14,
+                padding: 20,
               }}
             >
-              <div style={{ width: `${pct}%`, height: "100%", background: C.gold }} />
+              <div style={{ fontFamily: HEAD, fontSize: 22, color: C.gold }}>
+                {passport.profile.name}
+              </div>
+              <div
+                style={{
+                  marginTop: 12,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 10,
+                  flexWrap: "wrap",
+                }}
+              >
+                <code style={{ fontFamily: "monospace", fontSize: 15, color: C.cream }}>
+                  {passport.profile.id}
+                </code>
+                <button
+                  onClick={() => {
+                    navigator.clipboard?.writeText(passport.profile.id);
+                    setCopied(true);
+                    setTimeout(() => setCopied(false), 1500);
+                  }}
+                  style={{ ...btn(false), padding: "6px 12px", fontSize: 11 }}
+                >
+                  {copied ? "Copied" : "Copy"}
+                </button>
+              </div>
+
+              <div style={{ marginTop: 20, fontSize: 40, fontFamily: HEAD, color: C.gold }}>
+                {tried.length}
+                <span style={{ fontSize: 18, opacity: 0.7 }}> / {GINS.length} gins tried</span>
+              </div>
+
+              <div
+                style={{
+                  height: 8,
+                  background: "#241d10",
+                  borderRadius: 99,
+                  overflow: "hidden",
+                  marginTop: 12,
+                }}
+              >
+                <div style={{ width: `${pct}%`, height: "100%", background: C.gold }} />
+              </div>
             </div>
-          </div>
+          )}
 
           <h2
             style={{
@@ -398,48 +307,54 @@ export default function GinExplorer() {
             })}
           </div>
 
-          <h2
-            style={{
-              fontFamily: HEAD,
-              fontSize: 13,
-              letterSpacing: "0.2em",
-              color: C.gold,
-              margin: "28px 0 12px",
-            }}
-          >
-            GINS TRIED
-          </h2>
-          {tried.length === 0 ? (
-            <div style={{ fontStyle: "italic", opacity: 0.7 }}>No gins logged yet.</div>
-          ) : (
-            <div style={{ display: "grid", gap: 8 }}>
-              {tried.map((id) => {
-                const g = GINS.find((x) => x.id === id);
-                if (!g) return null;
-                return (
-                  <div
-                    key={id}
-                    style={{
-                      background: C.card,
-                      border: `1px solid ${C.border}`,
-                      borderLeft: `4px solid ${g.colour}`,
-                      borderRadius: 10,
-                      padding: "10px 14px",
-                    }}
-                  >
-                    <div style={{ fontFamily: HEAD, fontSize: 15 }}>{g.name}</div>
-                    <div style={{ fontSize: 15, opacity: 0.7 }}>
-                      {g.style} · {g.origin} · {g.abv}%
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+          {passport && (
+            <>
+              <h2
+                style={{
+                  fontFamily: HEAD,
+                  fontSize: 13,
+                  letterSpacing: "0.2em",
+                  color: C.gold,
+                  margin: "28px 0 12px",
+                }}
+              >
+                GINS TRIED
+              </h2>
+              {tried.length === 0 ? (
+                <div style={{ fontStyle: "italic", opacity: 0.7 }}>
+                  No gins logged yet. Tap “Mark as Tried” from the explorer to add your first stamp.
+                </div>
+              ) : (
+                <div style={{ display: "grid", gap: 8 }}>
+                  {tried.map((id) => {
+                    const g = GINS.find((x) => x.id === id);
+                    if (!g) return null;
+                    return (
+                      <div
+                        key={id}
+                        style={{
+                          background: C.card,
+                          border: `1px solid ${C.border}`,
+                          borderLeft: `4px solid ${g.colour}`,
+                          borderRadius: 10,
+                          padding: "10px 14px",
+                        }}
+                      >
+                        <div style={{ fontFamily: HEAD, fontSize: 15 }}>{g.name}</div>
+                        <div style={{ fontSize: 15, opacity: 0.7 }}>
+                          {g.style} · {g.origin} · {g.abv}%
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
-          <button onClick={download} style={{ ...btn(true), width: "100%", marginTop: 24 }}>
-            Download Passport
-          </button>
+              <button onClick={download} style={{ ...btn(true), width: "100%", marginTop: 24 }}>
+                Download Passport
+              </button>
+            </>
+          )}
         </div>
       </div>
     );
@@ -474,8 +389,11 @@ export default function GinExplorer() {
               GIN EXPLORER
             </div>
           </div>
-          <button onClick={() => setScreen("passport")} style={{ ...btn(false), padding: "8px 14px" }}>
-            Passport
+          <button
+            onClick={() => setScreen("passport")}
+            style={{ ...btn(false), padding: "8px 14px", fontSize: 11 }}
+          >
+            {passport ? "Passport" : "Start Passport"}
           </button>
         </div>
 
@@ -537,6 +455,43 @@ export default function GinExplorer() {
           ))}
         </div>
       </header>
+
+      {/* Passport teaser */}
+      {!passport && (
+        <div
+          style={{
+            background: "#241d10",
+            borderBottom: `1px solid ${C.border}`,
+            padding: "14px 16px",
+          }}
+        >
+          <div
+            style={{
+              maxWidth: 560,
+              margin: "0 auto",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 16,
+            }}
+          >
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontFamily: HEAD, fontSize: 13, color: C.gold, letterSpacing: "0.1em" }}>
+                GINISTRY PASSPORT
+              </div>
+              <div style={{ fontSize: 15, opacity: 0.8, marginTop: 2 }}>
+                Track your tasting journey across {GINS.length} gins.
+              </div>
+            </div>
+            <button
+              onClick={() => setCreateOpen(true)}
+              style={{ ...btn(true), padding: "8px 14px", fontSize: 11, flexShrink: 0 }}
+            >
+              Start free
+            </button>
+          </div>
+        </div>
+      )}
 
       <div
         style={{
@@ -724,6 +679,94 @@ export default function GinExplorer() {
               style={{ ...btn(!triedSet.has(selected.id)), width: "100%", marginTop: 22 }}
             >
               {triedSet.has(selected.id) ? "Tried ✓ — Undo" : "Mark as Tried"}
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Create passport modal */}
+      {createOpen && (
+        <div
+          onClick={() => setCreateOpen(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(0,0,0,0.75)",
+            zIndex: 60,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 24,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: C.card,
+              border: `1px solid ${C.gold}`,
+              borderRadius: 16,
+              padding: "28px 24px",
+              maxWidth: 360,
+              width: "100%",
+            }}
+          >
+            <div style={{ fontSize: 44, textAlign: "center" }}>🥃</div>
+            <div
+              style={{
+                fontFamily: HEAD,
+                fontSize: 12,
+                letterSpacing: "0.28em",
+                color: C.gold,
+                textAlign: "center",
+                marginTop: 10,
+              }}
+            >
+              GINISTRY PASSPORT
+            </div>
+            <div
+              style={{ fontFamily: HEAD, fontSize: 24, color: C.cream, textAlign: "center", margin: "8px 0" }}
+            >
+              Start your journey
+            </div>
+            <p style={{ fontSize: 16, opacity: 0.8, textAlign: "center", lineHeight: 1.5 }}>
+              Enter your name to create a free passport and keep a record of every gin you try at
+              The Ginistry.
+            </p>
+            <label
+              style={{
+                fontFamily: HEAD,
+                fontSize: 11,
+                letterSpacing: "0.16em",
+                color: C.gold,
+                display: "block",
+                margin: "18px 0 8px",
+              }}
+            >
+              YOUR NAME
+            </label>
+            <input
+              style={inputStyle}
+              value={nameInput}
+              onChange={(e) => setNameInput(e.target.value)}
+              placeholder="e.g. Alex Fletcher"
+              onKeyDown={(e) => {
+                if (e.key === "Enter") createPassport();
+              }}
+            />
+            {error && (
+              <div style={{ marginTop: 10, color: "#e08b6a", fontSize: 15 }}>{error}</div>
+            )}
+            <button
+              onClick={createPassport}
+              style={{ ...btn(true), width: "100%", marginTop: 18 }}
+            >
+              Create Passport
+            </button>
+            <button
+              onClick={() => setCreateOpen(false)}
+              style={{ ...btn(false), width: "100%", marginTop: 10 }}
+            >
+              Maybe later
             </button>
           </div>
         </div>
