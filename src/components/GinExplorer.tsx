@@ -664,7 +664,30 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
           }}
         >
           <div
+            ref={sheetRef}
             onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => {
+              const t = e.touches[0];
+              if (!t) return;
+              sheetStartY.current = t.clientY;
+              isDragging.current = true;
+              setSheetDragY(0);
+            }}
+            onTouchMove={(e) => {
+              const t = e.touches[0];
+              if (!t || !isDragging.current) return;
+              const delta = t.clientY - sheetStartY.current;
+              if (delta > 0) setSheetDragY(delta);
+            }}
+            onTouchEnd={() => {
+              isDragging.current = false;
+              if (sheetDragY > 100) {
+                setSheetDragY(0);
+                setSelected(null);
+              } else {
+                setSheetDragY(0);
+              }
+            }}
             style={{
               background: C.card,
               borderTop: `3px solid ${selected.colour}`,
@@ -674,6 +697,9 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
               maxHeight: "85vh",
               overflowY: "auto",
               padding: "18px 20px 28px",
+              transform: `translateY(${sheetDragY}px)`,
+              transition: isDragging.current ? "none" : "transform .25s ease",
+              touchAction: "pan-y",
             }}
           >
             <div
@@ -709,8 +735,14 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
               ))}
             </div>
             <button
+              onClick={() => setSelected(null)}
+              style={{ ...btn(false), width: "100%", marginTop: 22 }}
+            >
+              ← Back to gins
+            </button>
+            <button
               onClick={() => toggleTried(selected.id)}
-              style={{ ...btn(!triedSet.has(selected.id)), width: "100%", marginTop: 22 }}
+              style={{ ...btn(!triedSet.has(selected.id)), width: "100%", marginTop: 10 }}
             >
               {triedSet.has(selected.id) ? "Tried ✓ — Undo" : "Mark as Tried"}
             </button>
