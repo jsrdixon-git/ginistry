@@ -15,6 +15,8 @@ const BODY = "'Cormorant Garamond', serif";
 type Passport = {
   profile: { name: string; id: string; email: string; created: string };
   tried: number[];
+  ratings: Record<number, number>;
+
 };
 
 
@@ -91,8 +93,10 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
   const loadAccount = useCallback(async (user: { id: string; email?: string }) => {
     const [{ data: profile }, { data: rows }] = await Promise.all([
       supabase.from("profiles").select("display_name, created_at").eq("id", user.id).maybeSingle(),
-      supabase.from("tried_gins").select("gin_id").eq("user_id", user.id),
+      supabase.from("tried_gins").select("gin_id, rating").eq("user_id", user.id),
     ]);
+    const ratingMap: Record<number, number> = {};
+    for (const r of rows ?? []) ratingMap[r.gin_id] = r.rating ?? 0;
     setPassport({
       profile: {
         name: profile?.display_name || user.email?.split("@")[0] || "Explorer",
@@ -101,8 +105,10 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
         created: profile?.created_at ?? new Date().toISOString(),
       },
       tried: (rows ?? []).map((r) => r.gin_id),
+      ratings: ratingMap,
     });
   }, []);
+
 
   useEffect(() => {
     let active = true;
@@ -124,6 +130,8 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
 
 
   const tried = passport?.tried ?? [];
+  const ratings = passport?.ratings ?? {};
+
   const triedSet = useMemo(() => new Set(tried), [tried]);
 
   const filtered = useMemo(() => {
@@ -158,9 +166,12 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
     if (!ensurePassport()) return;
     const current = passport!;
     const has = current.tried.includes(id);
+    const nextRatings = { ...current.ratings };
+    if (has) delete nextRatings[id];
     const next: Passport = {
       ...current,
       tried: has ? current.tried.filter((x) => x !== id) : [...current.tried, id],
+      ratings: nextRatings,
     };
     setPassport(next);
     const userId = current.profile.id;
@@ -172,6 +183,18 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
       if (m) setCelebration(m);
     }
   }
+
+  function setRating(id: number, value: number) {
+    const current = passport;
+    if (!current) return;
+    setPassport({ ...current, ratings: { ...current.ratings, [id]: value } });
+    void supabase
+      .from("tried_gins")
+      .update({ rating: value })
+      .eq("user_id", current.profile.id)
+      .eq("gin_id", id);
+  }
+
 
   async function submitAuth() {
     const email = emailInput.trim();
@@ -224,8 +247,12 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
       "GINS TRIED:",
       ...passport.tried.map((id, i) => {
         const g = GINS.find((x) => x.id === id);
-        return g ? `${i + 1}. ${g.name} — ${g.style}, ${g.origin} (${g.abv}% ABV)` : "";
+        if (!g) return "";
+        const r = passport.ratings[id] ?? 0;
+        const stars = r ? ` — ${"★".repeat(r)}${"☆".repeat(3 - r)}` : "";
+        return `${i + 1}. ${g.name} — ${g.style}, ${g.origin} (${g.abv}% ABV)${stars}`;
       }),
+
     ];
     const blob = new Blob([lines.join("\n")], { type: "text/plain" });
     const url = URL.createObjectURL(blob);
@@ -574,6 +601,51 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
                         <div style={{ fontSize: 15, opacity: 0.7 }}>
                           {g.style} · {g.origin} · {g.abv}% ABV
                         </div>
+                        <div
+                          style={{
+                            marginTop: 8,
+                            display: "flex",
+                            alignItems: "center",
+                            gap: 6,
+                          }}
+                        >
+                          {[1, 2, 3].map((n) => {
+                            const active = (ratings[id] ?? 0) >= n;
+                            return (
+                              <button
+                                key={n}
+                                type="button"
+                                aria-label={`Rate ${g.name} ${n} star${n > 1 ? "s" : ""}`}
+                                onClick={() => setRating(id, (ratings[id] ?? 0) === n ? 0 : n)}
+                                style={{
+                                  background: "none",
+                                  border: "none",
+                                  padding: "4px 2px",
+                                  cursor: "pointer",
+                                  fontSize: 22,
+                                  lineHeight: 1,
+                                  color: active ? C.gold : "#6b5c3a",
+                                  touchAction: "manipulation",
+                                  WebkitTapHighlightColor: "transparent",
+                                }}
+                              >
+                                {active ? "★" : "☆"}
+                              </button>
+                            );
+                          })}
+                          <span
+                            style={{
+                              fontFamily: HEAD,
+                              fontSize: 10,
+                              letterSpacing: "0.14em",
+                              opacity: 0.55,
+                              marginLeft: 4,
+                            }}
+                          >
+                            {ratings[id] ? `${ratings[id]}/3` : "RATE IT"}
+                          </span>
+                        </div>
+
                       </div>
                     );
                   })}
