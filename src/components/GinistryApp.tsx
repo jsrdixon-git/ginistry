@@ -270,7 +270,13 @@ export default function GinistryApp({ gins }: { gins: Gin[] }) {
   return (
     <div style={{ background: C.bg, minHeight: "100vh", color: C.cream, fontFamily: BODY }}>
       <div style={{ paddingBottom: cart.length ? 130 : 76 }}>
-        {tab === "explore" && <GinExplorer gins={gins} screen="main" />}
+        {tab === "explore" && (
+          <GinExplorer
+            gins={gins}
+            screen="main"
+            onScreenChange={(s) => s === "passport" && setTab("passport")}
+          />
+        )}
         {tab === "passport" && (
           <GinExplorer
             gins={gins}
