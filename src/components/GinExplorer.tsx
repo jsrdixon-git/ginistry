@@ -56,7 +56,15 @@ const labelStyle: React.CSSProperties = {
 };
 
 
-export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
+export default function GinExplorer({
+  gins: ginsProp,
+  screen: screenProp,
+  onScreenChange,
+}: {
+  gins?: Gin[];
+  screen?: "main" | "passport";
+  onScreenChange?: (s: "main" | "passport") => void;
+}) {
   const gins = useMemo(() => ginsProp ?? [], [ginsProp]);
   const GINS = gins;
   const MILESTONE_LIST = useMemo(
@@ -71,7 +79,15 @@ export default function GinExplorer({ gins: ginsProp }: { gins?: Gin[] }) {
   }, [gins]);
   const [passport, setPassport] = useState<Passport | null>(null);
   const [ready, setReady] = useState(false);
-  const [screen, setScreen] = useState<"main" | "passport">("main");
+  const [screenState, setScreenState] = useState<"main" | "passport">("main");
+  const screen = screenProp ?? screenState;
+  const setScreen = useCallback(
+    (s: "main" | "passport") => {
+      setScreenState(s);
+      onScreenChange?.(s);
+    },
+    [onScreenChange],
+  );
   const [nameInput, setNameInput] = useState("");
   const [emailInput, setEmailInput] = useState("");
   const [passwordInput, setPasswordInput] = useState("");

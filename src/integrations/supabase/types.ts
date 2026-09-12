@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      orders: {
+        Row: {
+          created_at: string
+          id: string
+          items: Json
+          notes: string
+          order_number: number
+          paid: boolean
+          status: string
+          stripe_session_id: string | null
+          subtotal: number
+          table_number: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          items?: Json
+          notes?: string
+          order_number?: number
+          paid?: boolean
+          status?: string
+          stripe_session_id?: string | null
+          subtotal?: number
+          table_number?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          items?: Json
+          notes?: string
+          order_number?: number
+          paid?: boolean
+          status?: string
+          stripe_session_id?: string | null
+          subtotal?: number
+          table_number?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
