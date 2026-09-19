@@ -10,4 +10,4 @@
 - [x] Success screen after `?payment=success`
 - [x] `/dashboard` PIN 1234, realtime order list, status toggle
 
-Blocked: live card payments need STRIPE_SECRET_KEY (and optionally STRIPE_WEBHOOK_SECRET) in Project Settings → Secrets.
+- [x] STRIPE_SECRET_KEY + STRIPE_WEBHOOK_SECRET saved in project secrets — checkout verified end-to-end (reaches Stripe test checkout)
